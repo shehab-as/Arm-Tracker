@@ -115,12 +115,10 @@ int main()
         inRange(frame_RGB, lower_RGB, upper_RGB, Skin_Mask_RGB);
         
         medianBlur(Skin_Mask_YC, Skin_Mask_YC, 5);
+        Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2 * 5 + 1, 2 * 5 + 1), Point(5, 5));
+        dilate(Skin_Mask_YC, Skin_Mask_YC, element);
         //medianBlur(Skin_Mask_RGB, Skin_Mask_RGB, 5);
-        //Canny(Skin_Mask2, Contours, 40, 120);
         //RGB_Range(frame_RGB);
-//        Mat FG;
-//        MOG(frame, FG, 0.005);
-//        imshow("FG", FG);
         
         //Finding Contours Code Block for YCRCB
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -139,10 +137,10 @@ int main()
                 //putText(frame,  to_string(i) + "   ratio " + to_string( Contours[i].rows/ area), Point(frame.cols/2, frame.rows/2), FONT_HERSHEY_COMPLEX_SMALL, 10, Scalar(255,0,0), 1, CV_AA );
                 
                 drawContours(frame, Contours, i, Scalar(0,255,0), 3);
-
             }
         }
-        
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         vector<vector<Point>> hull(Better_Contours.size());
         
         for(int i=0; i<Better_Contours.size(); i++)
