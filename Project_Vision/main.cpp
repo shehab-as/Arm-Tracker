@@ -36,11 +36,23 @@ int main()
         Mat Skin_Mask1, Skin_Mask2;
         Mat Contours, Hierarchy;
         cap.read(frame);
+        
+        
         auto lower_HSV = Scalar(0, 48, 80);
         auto upper_HSV = Scalar(20, 255, 255);
         
-        auto lower_YCRCB = Scalar(0, 133, 77);
-        auto upper_YCRCB = Scalar(255, 173, 127);
+        //Loulou's paper2
+//        auto lower_HSV = Scalar(0, 38, 0);
+//        auto upper_HSV = Scalar(45, 230, 255);
+        
+        //Loulou's paper
+        auto lower_YCRCB = Scalar(0, 150, 100);
+        auto upper_YCRCB = Scalar(255, 200, 150);
+        
+        //My guess
+//        auto lower_YCRCB = Scalar(0, 140, 80);
+//        auto upper_YCRCB = Scalar(255, 180, 130);
+
         cvtColor(frame, frame_HSV, CV_BGR2HSV);
         cvtColor(frame, frame_YCRCB, CV_BGR2YCrCb);
 
@@ -57,8 +69,8 @@ int main()
         //Canny(frame, Contours, 40, 120);
         
         imshow("Frame", frame);
-        imshow("HSV", frame_HSV);
-        imshow("YCRCB", frame_YCRCB);
+        //imshow("HSV", frame_HSV);
+        //imshow("YCRCB", frame_YCRCB);
         imshow("Skin Mask (HSV)", Skin_Mask1);
         imshow("Skin Mask (YCRCB)", Skin_Mask2);
     }
@@ -109,3 +121,34 @@ void HSV_Range(Mat& frame)
 }
 
 
+
+//#include "opencv2/opencv.hpp"
+//
+//using namespace cv;
+//
+//int main(int, char**)
+//{
+//    VideoCapture cap(0); // open the default camera
+//    //VideoCapture cap("/home/mohamed/temp/sample.dino.avi");
+//    if(!cap.isOpened())  // check if we succeeded
+//        return -1;
+//    std::cerr << cap.get(CV_CAP_PROP_FRAME_WIDTH);
+//    std::cerr << cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+//    
+//    //create Background Subtractor object
+//    BackgroundSubtractorMOG2 MoG; //MOG approach
+//    
+//    for(;;)
+//    {
+//        Mat frame,foregroundMask;
+//        cap >> frame; // get a new frame from camera
+//        imshow("frame",frame);
+//        MoG(frame, foregroundMask,0.01);
+//        imshow("Mask",foregroundMask);
+//        
+//        if(waitKey(30) >= 0) break;
+//    }
+//    
+//    // the camera will be deinitialized automatically in VideoCapture destructor
+//    return 0;
+//}
