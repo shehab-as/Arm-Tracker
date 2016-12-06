@@ -7,6 +7,7 @@
 ////
 #include <iostream>
 #include <string>
+#include <vector>
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -18,7 +19,9 @@ using namespace cv;
 
 void RGB_Range(Mat&);
 void HSV_Range(Mat&);
-
+void Approx_White_Pixels(Mat&);
+bool WHITEBOY(Mat& img, int x, int y);
+               
 int main()
 {
     VideoCapture cap(0);
@@ -29,12 +32,12 @@ int main()
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     
+    BackgroundSubtractorMOG2 MOG;
     
     while(true)
     {
         Mat frame, frame_HSV, frame_YCRCB;
         Mat Skin_Mask1, Skin_Mask2;
-        Mat Contours, Hierarchy;
         cap.read(frame);
         
         
@@ -49,6 +52,10 @@ int main()
         auto lower_YCRCB = Scalar(0, 150, 100);
         auto upper_YCRCB = Scalar(255, 200, 150);
         
+        //Not correct segmentation.
+//        auto lower_YCRCB = Scalar(0, 133, 77);
+//        auto upper_YCRCB = Scalar(255, 173, 127);
+        
         //My guess
 //        auto lower_YCRCB = Scalar(0, 140, 80);
 //        auto upper_YCRCB = Scalar(255, 180, 130);
@@ -56,10 +63,30 @@ int main()
         cvtColor(frame, frame_HSV, CV_BGR2HSV);
         cvtColor(frame, frame_YCRCB, CV_BGR2YCrCb);
 
+//        vector<Mat> Contours;
+//        vector<Vec4i> Hierarchy;
+        Mat Contours;
+        
         inRange(frame_HSV, lower_HSV, upper_HSV, Skin_Mask1);
         inRange(frame_YCRCB, lower_YCRCB, upper_YCRCB, Skin_Mask2);
+        Mat WHITE_Skin_Mask2 = Skin_Mask2;
+        Approx_White_Pixels(WHITE_Skin_Mask2);
         
+        //medianBlur(Skin_Mask2, Skin_Mask2, 5);
+        //Canny(Skin_Mask2, Contours, 40, 120);
         
+        //Finding Contours Code Block.
+        
+        //findContours(Skin_Mask1, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+        
+//        for(int i=0; i<Contours.size(); i++)
+//        {
+//            auto area = contourArea(Contours[i]);
+//            if(area > 1000)
+//                drawContours(frame, Contours, i, Scalar(0,255,0), 3);
+//        }
+
+
         //RGB.create(frame.rows, frame.cols, CV_LOAD_IMAGE_GRAYSCALE);
         //HSV.create(frame.rows, frame.cols, CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -71,7 +98,8 @@ int main()
         imshow("Frame", frame);
         //imshow("HSV", frame_HSV);
         //imshow("YCRCB", frame_YCRCB);
-        imshow("Skin Mask (HSV)", Skin_Mask1);
+        //imshow("Skin Mask (HSV)", Skin_Mask1);
+        imshow("WHITEBOY", WHITE_Skin_Mask2);
         imshow("Skin Mask (YCRCB)", Skin_Mask2);
     }
     //////////////////////////////////////////
@@ -121,6 +149,34 @@ void HSV_Range(Mat& frame)
 }
 
 
+bool WHITEBOY(Mat& img, int x, int y)
+{
+    int white_pixels_count = 0;
+    for(int i=x-3; i<=x+3; i++)
+    {
+        for(int j=y-3; y<=y+3; y++)
+        {
+            if(img.at<uchar>(i, j) == 255)
+                white_pixels_count++;
+        }
+    }
+    if(white_pixels_count>=25)
+        return true;
+    
+    return false;
+}
+
+void Approx_White_Pixels(Mat& img)
+{
+    for(int i=0; i<img.rows; i++)
+    {
+        for(int j=0; j<img.cols; j++)
+        {
+            if(WHITEBOY(img, i, j) == true)
+                img.at<uchar>(i, j) = 255;
+        }
+    }
+}
 
 //#include "opencv2/opencv.hpp"
 //
