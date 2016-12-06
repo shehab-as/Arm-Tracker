@@ -21,10 +21,16 @@ void RGB_Range(Mat&);
 void HSV_Range(Mat&);
 void Approx_White_Pixels(Mat&);
 bool WHITEBOY(Mat& img, int x, int y);
-               
+
+void detectAndDisplay(Mat frame);
+
+
+string loulou_cascade = "/Users/shehabmohamed/Desktop/C++ Projects/Project_Vision/build/Debug/haarcascade_frontalface_alt.xml";
+CascadeClassifier Face;
 int main()
 {
     VideoCapture cap(0);
+    if( !Face.load( loulou_cascade ) ){ printf("--(!)Error loading\n"); return -1; };
     if(!cap.isOpened())
         cout<<"Webcam is not opened."<<endl;
     
@@ -34,19 +40,49 @@ int main()
     
     BackgroundSubtractorMOG2 MOG;
     
+    Mat firstM;
+    Mat frame, frame_HSV, frame_YCRCB, frame_RGB;
+    Mat Skin_Mask_YC, Skin_Mask_RGB;
+
     while(true)
     {
-        Mat frame, frame_HSV, frame_YCRCB, frame_RGB;
-        Mat Skin_Mask1, Skin_Mask2, Skin_Mask3;
         cap.read(frame);
         
+        //Loulou's waste of time.
         
-        auto lower_HSV = Scalar(0, 48, 80);
-        auto upper_HSV = Scalar(20, 255, 255);
-        
-        //Loulou's paper2
-//        auto lower_HSV = Scalar(0, 38, 0);
-//        auto upper_HSV = Scalar(45, 230, 255);
+//        if (background_frame>0)
+//        {
+//            if(firstM.empty())
+//            {
+//                cap.read(firstM);
+//                cvtColor(firstM, firstM, CV_RGB2YCrCb);
+//            }
+//            background_frame--;
+//            continue;
+//        }
+//        else
+//            cap.read(frame);
+//            cvtColor(frame, frame, CV_RGB2YCrCb);
+//        
+//        vector<Mat> bg, fg;
+//        split(firstM, bg);
+//        split(frame, fg);
+//        Mat distance;
+//        distance.create(frame.rows, frame.cols, CV_32F);
+//        distance = Scalar(0,0,0);
+//        for( int i =0; i< fg.size() ; i++)
+//        {
+//            Mat temp = abs(fg[i] - bg[i]);
+//            temp.convertTo(temp, CV_32F);
+//            
+//            distance += temp;
+//        }
+//        Mat mask;
+//        threshold(distance, mask, 35, 255, THRESH_BINARY);
+//        
+//        Mat kernel5x5 = getStructuringElement(MORPH_RECT, Size(5,5));
+//        morphologyEx(mask, mask, MORPH_OPEN, kernel5x5);
+
         
         //Loulou's paper
 //        auto lower_YCRCB = Scalar(0, 150, 100);
@@ -66,8 +102,7 @@ int main()
         //My guess
 //        auto lower_YCRCB = Scalar(0, 140, 80);
 //        auto upper_YCRCB = Scalar(255, 180, 130);
-
-        cvtColor(frame, frame_HSV, CV_BGR2HSV);
+////////////////////////////////////////////////////////////////////
         cvtColor(frame, frame_YCRCB, CV_BGR2YCrCb);
         cvtColor(frame, frame_RGB, CV_BGR2RGB);
 
@@ -75,39 +110,62 @@ int main()
         vector<Vec4i> Hierarchy;
         //Mat Contours;
         
-        inRange(frame_HSV, lower_HSV, upper_HSV, Skin_Mask1);
-        inRange(frame_YCRCB, lower_YCRCB, upper_YCRCB, Skin_Mask2);
-        inRange(frame_RGB, lower_RGB, upper_RGB, Skin_Mask3);
         
-        medianBlur(Skin_Mask2, Skin_Mask2, 5);
+        inRange(frame_YCRCB, lower_YCRCB, upper_YCRCB, Skin_Mask_YC);
+        inRange(frame_RGB, lower_RGB, upper_RGB, Skin_Mask_RGB);
+        
+        medianBlur(Skin_Mask_YC, Skin_Mask_YC, 5);
+        //medianBlur(Skin_Mask_RGB, Skin_Mask_RGB, 5);
         //Canny(Skin_Mask2, Contours, 40, 120);
+        //RGB_Range(frame_RGB);
+//        Mat FG;
+//        MOG(frame, FG, 0.005);
+//        imshow("FG", FG);
         
-        //Finding Contours Code Block.
-        
-        findContours(Skin_Mask2, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+        //Finding Contours Code Block for YCRCB
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        findContours(Skin_Mask_YC, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+        vector<Mat> Better_Contours;
         
         for(int i=0; i<Contours.size(); i++)
         {
             auto area = contourArea(Contours[i]);
-            if(area > 1000)
+            if(area > 1200 && area < 15000)
+            {
+//                auto ratio = Contours[i].rows/area;
+//                cout<<"Ratio: "<<ratio<<endl;
+
+                Better_Contours.push_back(Contours[i]);
+                //putText(frame,  to_string(i) + "   ratio " + to_string( Contours[i].rows/ area), Point(frame.cols/2, frame.rows/2), FONT_HERSHEY_COMPLEX_SMALL, 10, Scalar(255,0,0), 1, CV_AA );
+                
                 drawContours(frame, Contours, i, Scalar(0,255,0), 3);
+
+            }
         }
-
-
-        //RGB.create(frame.rows, frame.cols, CV_LOAD_IMAGE_GRAYSCALE);
-        //HSV.create(frame.rows, frame.cols, CV_LOAD_IMAGE_GRAYSCALE);
-
-        //RGB_Range(frame);
-        //HSV_Range(frame_HSV, HSV);
-        //blur(Skin_Mask2, Skin_Mask2, Size(3,3));
-        //Canny(frame, Contours, 40, 120);
         
+        vector<vector<Point>> hull(Better_Contours.size());
+        
+        for(int i=0; i<Better_Contours.size(); i++)
+            convexHull(Mat(Better_Contours[i]), hull[i], false);
+
+        
+        for(int i=0; i<Better_Contours.size(); i++)
+        {
+            auto area2 = contourArea(hull[i]);
+            auto ratio = Contours[i].rows/area2;
+            cout<<"Ratio: "<<ratio<<endl;
+            //if(ratio <= 0.001)
+            drawContours( frame, hull, i, Scalar(0,0,255), 3, 8, vector<Vec4i>() );
+
+        }
+        
+        
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         imshow("Frame", frame);
-        //imshow("HSV", frame_HSV);
         //imshow("YCRCB", frame_YCRCB);
-        imshow("Skin Mask (HSV)", Skin_Mask1);
-        imshow("Skin Mask (YCRCB)", Skin_Mask2);
-        //imshow("Skin Mask (RGB)", Skin_Mask3);
+        imshow("Skin Mask (YCRCB)", Skin_Mask_YC);
+        imshow("Skin Mask (RGB)", Skin_Mask_RGB);
+        //imshow("Skin Mask (RGB)", Skin_Mask_RGB);
     }
     //////////////////////////////////////////
     
@@ -120,32 +178,14 @@ void RGB_Range(Mat& frame)
     {
         for(int j=0; j<frame.cols; j++)
         {
-            int Red = frame.at<Vec3b>(i, j)[2];
-            int Green = frame.at<Vec3b>(i, j)[1];
-            int Blue = frame.at<Vec3b>(i, j)[0];
-            //TODO
-            if(Red >= 100 && Green >= 100 && Blue >= 100)
-            {
-                frame.at<Vec3b>(i, j)[2] = 255;
-                frame.at<Vec3b>(i, j)[1] = 255;
-                frame.at<Vec3b>(i, j)[0] = 255;
-            }
-                
-        }
-    }
-}
+            int R = frame.at<Vec3b>(i, j)[0];
+            int G = frame.at<Vec3b>(i, j)[1];
+            int B = frame.at<Vec3b>(i, j)[2];
 
-void HSV_Range(Mat& frame)
-{
-    for(int i=0; i<frame.rows; i++)
-    {
-        for(int j=0; j<frame.cols; j++)
-        {
-            int H = frame.at<Vec3b>(i, j)[0];
-            int S = frame.at<Vec3b>(i, j)[1];
-            int V = frame.at<Vec3b>(i, j)[2];
-            //TODO
-            if(H >= 100 && S >= 100 && V >= 100)
+            bool e1 = (R>95) && (G>40) && (B>20) && ((max(R,max(G,B)) - min(R, min(G,B)))>15) && (abs(R-G)>15) && (R>G) && (R>B);
+            bool e2 = (R>220) && (G>210) && (B>170) && (abs(R-G)<=15) && (R>B) && (G>B);
+            
+            if(e1 || e2)
             {
                 frame.at<Vec3b>(i, j)[0] = 255;
                 frame.at<Vec3b>(i, j)[1] = 255;
@@ -154,7 +194,6 @@ void HSV_Range(Mat& frame)
         }
     }
 }
-
 
 bool WHITEBOY(Mat& img, int x, int y)
 {
@@ -185,33 +224,3 @@ void Approx_White_Pixels(Mat& img)
     }
 }
 
-//#include "opencv2/opencv.hpp"
-//
-//using namespace cv;
-//
-//int main(int, char**)
-//{
-//    VideoCapture cap(0); // open the default camera
-//    //VideoCapture cap("/home/mohamed/temp/sample.dino.avi");
-//    if(!cap.isOpened())  // check if we succeeded
-//        return -1;
-//    std::cerr << cap.get(CV_CAP_PROP_FRAME_WIDTH);
-//    std::cerr << cap.get(CV_CAP_PROP_FRAME_HEIGHT);
-//    
-//    //create Background Subtractor object
-//    BackgroundSubtractorMOG2 MoG; //MOG approach
-//    
-//    for(;;)
-//    {
-//        Mat frame,foregroundMask;
-//        cap >> frame; // get a new frame from camera
-//        imshow("frame",frame);
-//        MoG(frame, foregroundMask,0.01);
-//        imshow("Mask",foregroundMask);
-//        
-//        if(waitKey(30) >= 0) break;
-//    }
-//    
-//    // the camera will be deinitialized automatically in VideoCapture destructor
-//    return 0;
-//}
