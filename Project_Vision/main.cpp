@@ -36,8 +36,8 @@ int main()
     
     while(true)
     {
-        Mat frame, frame_HSV, frame_YCRCB;
-        Mat Skin_Mask1, Skin_Mask2;
+        Mat frame, frame_HSV, frame_YCRCB, frame_RGB;
+        Mat Skin_Mask1, Skin_Mask2, Skin_Mask3;
         cap.read(frame);
         
         
@@ -49,8 +49,15 @@ int main()
 //        auto upper_HSV = Scalar(45, 230, 255);
         
         //Loulou's paper
-        auto lower_YCRCB = Scalar(0, 150, 100);
-        auto upper_YCRCB = Scalar(255, 200, 150);
+//        auto lower_YCRCB = Scalar(0, 150, 100);
+//        auto upper_YCRCB = Scalar(255, 200, 150);
+        
+        //From Gesture example (Perfect so far).
+        auto lower_YCRCB = Scalar(60, 140, 90);
+        auto upper_YCRCB = Scalar(250, 210, 130);
+        
+        auto lower_RGB = Scalar();
+        auto upper_RGB = Scalar();
         
         //Not correct segmentation.
 //        auto lower_YCRCB = Scalar(0, 133, 77);
@@ -62,29 +69,29 @@ int main()
 
         cvtColor(frame, frame_HSV, CV_BGR2HSV);
         cvtColor(frame, frame_YCRCB, CV_BGR2YCrCb);
+        cvtColor(frame, frame_RGB, CV_BGR2RGB);
 
-//        vector<Mat> Contours;
-//        vector<Vec4i> Hierarchy;
-        Mat Contours;
+        vector<Mat> Contours;
+        vector<Vec4i> Hierarchy;
+        //Mat Contours;
         
         inRange(frame_HSV, lower_HSV, upper_HSV, Skin_Mask1);
         inRange(frame_YCRCB, lower_YCRCB, upper_YCRCB, Skin_Mask2);
-        Mat WHITE_Skin_Mask2 = Skin_Mask2;
-        Approx_White_Pixels(WHITE_Skin_Mask2);
+        inRange(frame_RGB, lower_RGB, upper_RGB, Skin_Mask3);
         
-        //medianBlur(Skin_Mask2, Skin_Mask2, 5);
+        medianBlur(Skin_Mask2, Skin_Mask2, 5);
         //Canny(Skin_Mask2, Contours, 40, 120);
         
         //Finding Contours Code Block.
         
-        //findContours(Skin_Mask1, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+        findContours(Skin_Mask2, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
         
-//        for(int i=0; i<Contours.size(); i++)
-//        {
-//            auto area = contourArea(Contours[i]);
-//            if(area > 1000)
-//                drawContours(frame, Contours, i, Scalar(0,255,0), 3);
-//        }
+        for(int i=0; i<Contours.size(); i++)
+        {
+            auto area = contourArea(Contours[i]);
+            if(area > 1000)
+                drawContours(frame, Contours, i, Scalar(0,255,0), 3);
+        }
 
 
         //RGB.create(frame.rows, frame.cols, CV_LOAD_IMAGE_GRAYSCALE);
@@ -98,9 +105,9 @@ int main()
         imshow("Frame", frame);
         //imshow("HSV", frame_HSV);
         //imshow("YCRCB", frame_YCRCB);
-        //imshow("Skin Mask (HSV)", Skin_Mask1);
-        imshow("WHITEBOY", WHITE_Skin_Mask2);
+        imshow("Skin Mask (HSV)", Skin_Mask1);
         imshow("Skin Mask (YCRCB)", Skin_Mask2);
+        //imshow("Skin Mask (RGB)", Skin_Mask3);
     }
     //////////////////////////////////////////
     
