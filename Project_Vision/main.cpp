@@ -179,7 +179,7 @@ int main()
         {
             if( paths[c].size() >  40)
             {
-                for ( int j = paths[c].size() - 40; j < paths[c].size(); j++)
+                for ( int j = (int)paths[c].size() - 40; j < paths[c].size(); j++)
                 {
                     //                        cout << "paths[i] " << paths[i];
                     //                        int thickness = int( sqrt(64/ float(j+1))*2.5);
