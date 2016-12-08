@@ -33,7 +33,8 @@ int main()
     
     Mat frame, frame_HSV, frame_YCRCB;
     Mat Skin_Mask_YC, Skin_Mask_HSV;
-
+    vector<Point> path;
+    
     while(true)
     {
         cap.read(frame);
@@ -74,8 +75,8 @@ int main()
         
         
         // Region of Interest 1/2 Lower Image.
-        Mat frame_YCRCB_ROI = frame_YCRCB(Range(frame_YCRCB.rows/2, frame_YCRCB.rows), Range(0, frame_YCRCB.cols));
-        Mat frame_ROI = frame(Range(frame.rows/2, frame.rows), Range(0, frame.cols));
+        Mat frame_YCRCB_ROI = frame_YCRCB(Range((int)frame_YCRCB.rows/3, frame_YCRCB.rows), Range(0, frame_YCRCB.cols));
+        Mat frame_ROI = frame(Range((int)frame.rows/3, frame.rows), Range(0, frame.cols));
         inRange(frame_YCRCB_ROI, lower_YCRCB, upper_YCRCB, Skin_Mask_YC);
         //inRange(frame_YCRCB_ROI, lower_YCRCB, upper_YCRCB, Skin_Mask_YC);
         inRange(frame_HSV, lower_HSV, upper_HSV, Skin_Mask_HSV);
@@ -91,6 +92,7 @@ int main()
         // Applying Region of Interest
         findContours(Skin_Mask_YC, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
         vector<Mat> Better_Contours;
+        vector<Point> largest (1);
         
         for(int i=0; i<Contours.size(); i++)
         {
@@ -102,11 +104,44 @@ int main()
                 int cY = M.m01 / M.m00;
                 Better_Contours.push_back(Contours[i]);
                 
+                /////////////////////////////////
+                
+                if ( contourArea(Contours[i])> contourArea(largest))
+                {
+                    largest = Contours[i];
+                }
+                
+                /////////////////////////////////
+                
                 drawContours(frame_ROI, Contours, i, Scalar(0,255,0), 3);
                 //Drawing Centroid on Contours.
-                circle(frame_ROI, Point(cX, cY), 7, Scalar(255,0,0), -1);
+                circle(frame_ROI, Point(cX, cY), 3, Scalar(255,0,0), -1);
             }
         }
+        
+        /////////////////////////////////
+        auto M = moments(largest);
+        int cX = M.m10 / M.m00;
+        int cY = M.m01 / M.m00;
+        if ( cX > 0 && cY > 0)
+        {
+            path.push_back(Point(cX,cY));
+            cout << "coor " << cX << " " << cY << endl;
+        }
+        
+        
+        
+        if( path.size() >  40)
+        {
+            for ( int j = path.size() - 40; j < path.size(); j++)
+            {
+                //                        cout << "paths[i] " << paths[i];
+                //                        int thickness = int( sqrt(64/ float(j+1))*2.5);
+                line(frame_ROI, path[j-1], path[j], Scalar(0,0,0), 3);
+            }
+        }
+        /////////////////////////////////
+        
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         vector<vector<Point>> hull(Better_Contours.size());
