@@ -33,7 +33,7 @@ int main()
     
     Mat frame, frame_HSV, frame_YCRCB;
     Mat Skin_Mask_YC, Skin_Mask_HSV;
-    vector<Point> path;
+    vector<vector<Point>> paths;
     
     while(true)
     {
@@ -106,10 +106,10 @@ int main()
                 
                 /////////////////////////////////
                 
-                if ( contourArea(Contours[i])> contourArea(largest))
-                {
-                    largest = Contours[i];
-                }
+//                if ( contourArea(Contours[i])> contourArea(largest))
+//                {
+//                    largest = Contours[i];
+//                }
                 
                 /////////////////////////////////
                 
@@ -120,26 +120,75 @@ int main()
         }
         
         /////////////////////////////////
-        auto M = moments(largest);
-        int cX = M.m10 / M.m00;
-        int cY = M.m01 / M.m00;
-        if ( cX > 0 && cY > 0)
+        //Calculating Paths
+        for( int a = 0; a < Better_Contours.size() ; a++)
         {
-            path.push_back(Point(cX,cY));
-            cout << "coor " << cX << " " << cY << endl;
+            auto M = moments(Better_Contours[a]);
+            int cX = M.m10 / M.m00;
+            int cY = M.m01 / M.m00;
+            bool close = false;
+            
+            if ( cX > 0 && cY > 0)
+            {
+                for (int b = 0; b < paths.size(); b++)
+                {
+                    if ( abs(cX - paths[b].back().x) < 30 && abs(cY - paths[b].back().y) < 30)
+                    {
+                        paths[b].push_back(Point(cX, cY));
+                        close = true;
+                        break;
+                    }
+                    else
+                    {
+                        paths[b].push_back(paths[b].back());
+                    }
+                }
+                
+                if (close == false)
+                {
+                    vector<Point> temp;
+                    temp.push_back(Point(cX, cY));
+                    paths.push_back(temp);
+                    
+                }
+
+                cout << "coor " << cX << " " << cY << endl;
+            }
+            
+            
+            
+            
         }
         
-        
-        
-        if( path.size() >  40)
+        //Path clean up - removing obsolete paths
+        for (int d = 0; d < paths.size(); d++)
         {
-            for ( int j = path.size() - 40; j < path.size(); j++)
+            if (paths[d].size() > 5)
             {
-                //                        cout << "paths[i] " << paths[i];
-                //                        int thickness = int( sqrt(64/ float(j+1))*2.5);
-                line(frame_ROI, path[j-1], path[j], Scalar(0,0,0), 3);
+                if( paths[d][paths[d].size()-1] == paths[d][paths[d].size()-2] && paths[d][paths[d].size()-2] == paths[d][paths[d].size()-3] && paths[d][paths[d].size()-3] == paths[d][paths[d].size()-4])
+                {
+                    paths.erase(paths.begin()+ d);
+                }
+            }
+            
+            
+        }
+        
+        //Drawing paths
+        for (int c = 0; c < paths.size(); c++)
+        {
+            if( paths[c].size() >  40)
+            {
+                for ( int j = paths[c].size() - 40; j < paths[c].size(); j++)
+                {
+                    //                        cout << "paths[i] " << paths[i];
+                    //                        int thickness = int( sqrt(64/ float(j+1))*2.5);
+                    line(frame_ROI, paths[c][j-1], paths[c][j], Scalar(0,0,0), 3);
+                }
             }
         }
+        
+        
         /////////////////////////////////
         
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
