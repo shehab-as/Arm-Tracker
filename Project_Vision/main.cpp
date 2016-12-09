@@ -2,9 +2,6 @@
 ////  main.cpp
 ////  Project_Vision
 ////
-////  Created by Shehab Mohamed on 12/5/16.
-////  Copyright © 2016 Shehab Mohamed. All rights reserved.
-////
 #include <iostream>
 #include <string>
 #include <vector>
@@ -25,11 +22,10 @@ int main()
     if(!cap.isOpened())
         cout<<"Webcam is not opened."<<endl;
     
-    // 640x480
+    // Window 640x480
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
     
-    //BackgroundSubtractorMOG2 MOG;
     
     Mat frame, frame_HSV, frame_YCRCB;
     Mat Skin_Mask_YC, Skin_Mask_HSV;
@@ -45,21 +41,13 @@ int main()
         
         
         //From Gesture example (Perfect so far) (2).
+        
         auto lower_YCRCB = Scalar(0, 148, 88);
         auto upper_YCRCB = Scalar(255, 210, 150);
         
         //From Gesture example (Perfect so far).
 //        auto lower_YCRCB = Scalar(60, 140, 90);
 //        auto upper_YCRCB = Scalar(250, 210, 130);
-
-        
-        //Not correct segmentation.
-//        auto lower_YCRCB = Scalar(0, 133, 77);
-//        auto upper_YCRCB = Scalar(255, 173, 127);
-        
-        //My guess
-//        auto lower_YCRCB = Scalar(0, 140, 80);
-//        auto upper_YCRCB = Scalar(255, 180, 130);
         
         //Terrible.
         auto lower_HSV = Scalar(130, 10, 75);
@@ -74,20 +62,14 @@ int main()
         //Mat Contours;
         
         
-        // Region of Interest 1/2 Lower Image.
+        // Region of Interest 2/3 Lower Image.
         Mat frame_YCRCB_ROI = frame_YCRCB(Range((int)frame_YCRCB.rows/3, frame_YCRCB.rows), Range(0, frame_YCRCB.cols));
         Mat frame_ROI = frame(Range((int)frame.rows/3, frame.rows), Range(0, frame.cols));
         inRange(frame_YCRCB_ROI, lower_YCRCB, upper_YCRCB, Skin_Mask_YC);
-        //inRange(frame_YCRCB_ROI, lower_YCRCB, upper_YCRCB, Skin_Mask_YC);
         inRange(frame_HSV, lower_HSV, upper_HSV, Skin_Mask_HSV);
         
         medianBlur(Skin_Mask_YC, Skin_Mask_YC, 5);
         medianBlur(Skin_Mask_HSV, Skin_Mask_HSV, 5);
-
-        //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(2 * 5 + 1, 2 * 5 + 1), Point(5, 5));
-        //dilate(Skin_Mask_YC, Skin_Mask_YC, element);
-        //medianBlur(Skin_Mask_RGB, Skin_Mask_RGB, 5);
-        //RGB_Range(frame_RGB);
         
         // Applying Region of Interest
         findContours(Skin_Mask_YC, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -139,9 +121,7 @@ int main()
                         break;
                     }
                     else
-                    {
                         paths[b].push_back(paths[b].back());
-                    }
                 }
                 
                 if (close == false)
@@ -149,14 +129,9 @@ int main()
                     vector<Point> temp;
                     temp.push_back(Point(cX, cY));
                     paths.push_back(temp);
-                    
                 }
-
                 cout << "coor " << cX << " " << cY << endl;
             }
-            
-            
-            
             
         }
         
@@ -170,8 +145,6 @@ int main()
                     paths.erase(paths.begin()+ d);
                 }
             }
-            
-            
         }
         
         //Drawing paths
@@ -187,10 +160,9 @@ int main()
                 }
             }
         }
-        
-        
         /////////////////////////////////
         
+        //////////////// Convex Hull ////////////////
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         vector<vector<Point>> hull(Better_Contours.size());
@@ -208,57 +180,16 @@ int main()
             drawContours( frame_ROI, hull, i, Scalar(0,0,255), 3, 8, vector<Vec4i>() );
         }
         
-        
-        // Commented Code Below is for the whole image. Above is for 1/2 Image (ROI)
-        
-        //Finding Contours Code Block for YCRCB
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//        findContours(Skin_Mask_YC, Contours, Hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-//        vector<Mat> Better_Contours;
-//        
-//        for(int i=0; i<Contours.size(); i++)
-//        {
-//            auto area = contourArea(Contours[i]);
-//            if(area > 1200 && area < 15000)
-//            {
-////                auto ratio = Contours[i].rows/area;
-////                cout<<"Ratio: "<<ratio<<endl;
-//
-//                Better_Contours.push_back(Contours[i]);
-//                //putText(frame,  to_string(i) + "   ratio " + to_string( Contours[i].rows/ area), Point(frame.cols/2, frame.rows/2), FONT_HERSHEY_COMPLEX_SMALL, 10, Scalar(255,0,0), 1, CV_AA );
-//                
-//                drawContours(frame, Contours, i, Scalar(0,255,0), 3);
-//            }
-//        }
-//        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-//        vector<vector<Point>> hull(Better_Contours.size());
-//        
-//        for(int i=0; i<Better_Contours.size(); i++)
-//            convexHull(Mat(Better_Contours[i]), hull[i], false);
-//
-//        
-//        for(int i=0; i<Better_Contours.size(); i++)
-//        {
-//            auto area2 = contourArea(hull[i]);
-//            auto ratio = Contours[i].rows/area2;
-//            cout<<"Ratio: "<<ratio<<endl;
-//            //if(ratio <= 0.001)
-//            drawContours( frame, hull, i, Scalar(0,0,255), 3, 8, vector<Vec4i>() );
-//
-//        }
-        
-        
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         imshow("Frame", frame);
         imshow("Skin Mask (HSV)", Skin_Mask_HSV);
         imshow("Skin Mask (YCRCB)", Skin_Mask_YC);
     }
-    //////////////////////////////////////////
     
     return 0;
 }
 
+// RGB Color Segmentation. Function not used.
 void RGB_Range(Mat& frame)
 {
     for(int i=0; i<frame.rows; i++)
