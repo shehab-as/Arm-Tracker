@@ -7,7 +7,4 @@ Arm-Tracker is a program that detects Hands in a ROI (lower 2/3) of the frame, m
 ### Skin-tone Masked Out:
 ![Preview](https://github.com/ShehabCE/Vision-Project/blob/master/Screen%20Shot%202016-12-10%20at%205.16.31%20PM.png)
 
-### Amr Tracking:
-![Preview](https://github.com/ShehabCE/Vision-Project/blob/master/Screen%20Shot%202016-12-11%20at%2011.45.50%20PM.png)
-
 
